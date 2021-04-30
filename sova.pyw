@@ -1,4 +1,5 @@
 from selenium import webdriver # pip install selenium
+from selenium.webdriver.support.ui import Select
 import pyautogui # pip install pyautogui
 import os, time, sys
 from datetime import datetime, timedelta
@@ -9,17 +10,39 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 
 COUNTRIES = ['LV']
-YOUTUBE_CHANNELS = {'LV':'UCxOgmpeNDyP_C6efcYRdYSQ',
-                    'KZ':'UCN6bgSC5mdl8J7y7S9N2qSQ',
-                    'BN':'UCwDdQgITt3pgdc_j3O764Hg'}
-
-COLUMNS_CHANNELS =  {'LV':'F'}                   
-
+BRANDS = {
+    'BN':'Baltnews',
+    'AB':'Sputnik Abkhazia',
+    'AM':'Sputnik Armenia',
+    'AZ':'Sputnik Azerbaijan',
+    'UA':'Ukraina.ru',
+    'GE':'Sputnik Georgia',
+    'KZ':'Sputnik Kazakhstan',
+    'KG':'Sputnik Kyrgyzstan',
+    'LV':'Sputnik Latvia',
+    'LT':'Sputnik Lithuania',
+    'ML':'Sputnik Moldova',
+    'OS':'Sputnik Ossetia',
+    'TJ':'Sputnik Tajikistan',
+    'UZ':'Sputnik Uzbekistan',
+    'SBZ':'Sputnik Ближнее зарубежье',
+    'SRU':'Sputnik на русском'}
 
 def main():
+    
+    #  Подготавливаем webdriver
+    chrome_options = webdriver.ChromeOptions() 
+    chrome_options.add_argument("--start-maximized")
+    # chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])        
+    chrome_options.add_argument('--user-data-dir=C:/Users/mitkevich/AppData/Local/Google/Chrome/User Data') #Tester
+    # chrome_options.add_argument('--profile-directory=Profile 1')
+    executable_path = os.path.dirname(os.path.abspath(__file__)) + '\chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=executable_path, options=chrome_options)
 
-    #  Работа с таблицей
-
+    #  Готовим таблицу
     # Читаем ключи из файла
     CREDENTIALS_FILE = 'sputnik-analitics-python.json'  # Имя файла с закрытым ключом для таблиц, вы должны подставить свое
     credentials_sheets = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
@@ -28,9 +51,66 @@ def main():
 
     spreadsheetId = "1DSDFv5uXJkTcDOyuG2Yx_IW_zw4DfTgp9u5dpJzzLZ4"
 
-    # ищем число строк на листе
+    #  дата, на которую должны занести данные
+    yesterday_date = (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1))
+    print(yesterday_date)
+
+
+    country_url = 'http://ciad-etl2.rian.off:50080/social_views/'
+    driver.get(country_url)
+    # ищем табулятор просмотров
+    time.sleep(5)
+    elem_id = driver.find_element_by_id("input-date")
+    print(elem_id.text)
+    input_date = datetime.strptime(elem_id.text, 'Input date: %d.%m.%Y') #.date()
+    if (input_date == yesterday_date):
+        print('Дата на сайте корректна')
+    print(input_date)
+
+    elem_id = driver.find_element_by_id("current-time")
+    print(elem_id.text)
+
+    # elem_id = driver.find_element_by_id("region")
+    # elem_id.click()
+    
+
+    select = Select(driver.find_element_by_id('region'))
+    select.select_by_value('52')
+    time.sleep(1)
+
+
+    # elem_id.click()
+    time.sleep(3)
+    #  цикл по странам
     for country in COUNTRIES:
-        col_channel = COLUMNS_CHANNELS.get(country, None)
+        brand = BRANDS.get(country, None)
+        select = Select(driver.find_element_by_id('brand'))
+        select.select_by_value(brand)
+        time.sleep(1)
+
+
+        elem_id = driver.find_element_by_id('channels-227')
+        value = elem_id.get_property('placeholder')
+        # value = elem_id.get_attribute('placeholder')
+        if ( value== "0"):
+            elem_id.set_property('text')
+        else:
+            print(value)
+        time.sleep(2)
+
+        elem_id = driver.find_element_by_id('submit-button')
+        elem_id.click()
+        time.sleep(5)
+
+
+    # print ("Данные занесены")
+    driver.quit()
+
+    '''
+
+    # ищем число строк на листе страны
+    for country in COUNTRIES:
+
         ranges = [country]
         results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
                                             ranges = ranges).execute()  
@@ -38,7 +118,7 @@ def main():
         new_row = last_row + 1
 
         # смотрим дату в последней строке
-        ranges = [country +"!A"+str(last_row)+":"+col_channel+str(last_row)] # 
+        ranges = [country +"!A"+str(last_row)+":B"+str(last_row)] # 
         results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
                                             ranges = ranges, 
                                             valueRenderOption = 'FORMATTED_VALUE',  
@@ -50,7 +130,7 @@ def main():
             print("Данные за сегодня надо брвть завтра")
             sys.exit()
         next_date = last_date + timedelta(days=1)
-        
+
         #  Подготавливаем граббер
         chrome_options = webdriver.ChromeOptions() 
         chrome_options.add_argument("--start-maximized")
@@ -63,10 +143,7 @@ def main():
         executable_path = os.path.dirname(os.path.abspath(__file__)) + '\chromedriver.exe'
         driver = webdriver.Chrome(executable_path=executable_path, options=chrome_options)
 
-
-
-
-        #  вычисляем границы даты для запроса
+        #  вычисляем границы даты
         epoch = datetime.utcfromtimestamp(0)
         ds = next_date + timedelta(hours=7)
         de = next_date + timedelta(days=1)  + timedelta(hours=7)
@@ -81,8 +158,7 @@ def main():
         driver.get(country_url)
         # ищем табулятор просмотров
         time.sleep(5)
-        elem_id = driver.find_element_by_id("VIDEO_THUMBNAIL_IMPRESSIONS-tab") # показы
-        # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
+        elem_id = driver.find_element_by_id("VIEWS-tab")
         elem_id.click()
         time.sleep(3)
         # ищем график и клмикаем в него
@@ -96,8 +172,8 @@ def main():
         print(curr_views)
         time.sleep(5)
 
-        #  заполняем новую строчку - добавляя дату
-        new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
+        #  заполняем новую строчку
+        new_range = country +"!A"+str(new_row)+":B"+str(new_row)
         curr_date = next_date.date()
         results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
             "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
@@ -105,28 +181,13 @@ def main():
                 {"range":  new_range,
                 "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
                 "values": [
-                            [str(curr_date)] # Заполняем одну строку
+                            [str(curr_date), curr_views] # Заполняем одну строку
                 ]}
             ]
         }).execute()
-
-        # вставляем показы
-        new_range = country +"!"+col_channel+str(new_row)+":"+col_channel+str(new_row)
-        curr_date = next_date.date()
-        results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
-            "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
-            "data": [
-                {"range":  new_range,
-                "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
-                "values": [
-                            [curr_views] # Заполняем одну строку
-                ]}
-            ]
-        }).execute()
-
         print ("Данные занесены")
-        driver.quit()
-
+    driver.quit()
+    '''
     
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()
