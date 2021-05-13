@@ -39,6 +39,16 @@ def int_value_from_ru_month(date_str):
         date_str = date_str.replace(k, str(v))
     return date_str
 
+
+def shits_column_name_to_number(column_name):
+    column_name = column_name.upper()
+    sum = 0
+    for i in column_name:
+        sum = sum * 26
+        sum = sum + (ord(i) - ord('A') )
+    return sum
+    
+
 def main():
     #  Работа с таблицей
     # Читаем ключи из файла
@@ -49,8 +59,9 @@ def main():
 
     spreadsheetId = "1DSDFv5uXJkTcDOyuG2Yx_IW_zw4DfTgp9u5dpJzzLZ4"
 
-    # ищем число строк на листе
+    # цикл по странам
     for country in COUNTRIES:
+        # ищем число строк на листе страны
         col_channel = COLUMNS_CHANNELS.get(country, None)
         ranges = [country]
         results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
@@ -64,19 +75,37 @@ def main():
                                             ranges = ranges, 
                                             valueRenderOption = 'FORMATTED_VALUE',  
                                             dateTimeRenderOption = 'FORMATTED_STRING').execute() 
-        sheet_values = results['valueRanges'][0]['values'][0][0]
+        res_row = results['valueRanges'][0]['values'][0]                                            
+        date_values = res_row[0]
+        num_col = shits_column_name_to_number(col_channel)
+        if (num_col > len(res_row) ):
+            view_values = 0
+        else:
+            view_values = res_row[num_col]       
         #  Последняя дата в таблице
-        last_date = datetime.strptime(sheet_values, '%d.%m.%Y') #.datetime() 
+        last_date = datetime.strptime(date_values, '%d.%m.%Y') #.datetime() 
         #  Вычисляем дату вчерашнего дня
         yesterday = (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1))
         #  Вычисляем дату позавчерашнего  дня
         before_yesterday = yesterday - timedelta(days=1)
-        #  Если даты равны, новые данные за сегодняшний день брать рано, выходим из скрипта
-        if (last_date ==  yesterday ):
-            print("Данные за сегодня надо брать завтра")
-            sys.exit()
-        # Дата меньше 
+        
+        # rangesV = [country +"!"+col_channel+str(last_row)+":"+col_channel+str(last_row)] # 
+        # request = service.spreadsheets().values().get(spreadsheetId=spreadsheetId, 
+        #                                     range=rangesV, valueRenderOption=value_render_option, dateTimeRenderOption=date_time_render_option)
+        # response = request.execute()
+
+        #  Если дата за вчера есть, то надо проверить есть ли там значение показов.
+        
         next_date = last_date + timedelta(days=1)
+        # новые данные за сегодняшний день брать рано, выходим из скрипта
+        if (last_date ==  yesterday ):
+            print("Вчерашняя дата в таблице есть. Проверим заполнение.")
+            if (int(view_values) > 0):
+                print("Число показов {}".format(view_values))
+                sys.exit()
+            else:
+                print("Значений нет. Надо заполнить")
+                next_date = last_date + timedelta(days=0)
         
         #  Подготавливаем граббер
         chrome_options = webdriver.ChromeOptions() 
@@ -145,15 +174,14 @@ def main():
         time.sleep(5)
 
 
-        #  заполняем новую строчку - добавляя дату
+        #  заполняем значения
+         
+        if (last_date ==  yesterday ): #  если дата уже была
+            new_range = country +"!A"+str(last_row)+":A"+col_channel+str(last_row)
+        else: 
+            new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
 
-        new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
         curr_date = next_date.date()
-
-        #  если такая дата в таблице уже есть 
-        if (last_date ==  curr_date):
-            print("Такая дата в таблице есть")
-            sys.exit()
 
         results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
             "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
@@ -167,7 +195,11 @@ def main():
         }).execute()
 
         # вставляем показы
-        new_range = country +"!"+col_channel+str(new_row)+":"+col_channel+str(new_row)
+        if (last_date ==  yesterday ): #  если дата уже была
+            new_range = country +"!"+col_channel+str(last_row)+":"+col_channel+str(last_row)
+        else:        
+            new_range = country +"!"+col_channel+str(new_row)+":"+col_channel+str(new_row)
+
         curr_date = next_date.date()
         results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
             "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)

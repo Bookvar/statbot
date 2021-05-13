@@ -33,7 +33,6 @@ def main():
     #  Подготавливаем webdriver
     chrome_options = webdriver.ChromeOptions() 
     chrome_options.add_argument("--start-maximized")
-    # chrome_options.add_argument('--headless')
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])        
@@ -65,6 +64,10 @@ def main():
     input_date = datetime.strptime(elem_id.text, 'Input date: %d.%m.%Y') #.date()
     if (input_date == yesterday_date):
         print('Дата на сайте корректна')
+    else:
+        print('Дата на сайте некорректна')
+        sys.exit()
+    
     print(input_date)
 
     elem_id = driver.find_element_by_id("current-time")
@@ -75,7 +78,7 @@ def main():
     
 
     select = Select(driver.find_element_by_id('region'))
-    select.select_by_value('52')
+    select.select_by_value('52') # Ближнее Зарубежье
     time.sleep(1)
 
 
@@ -88,106 +91,61 @@ def main():
         select.select_by_value(brand)
         time.sleep(1)
 
+        # цикл по площадкам страны (берём из гуглтаблицы, третья строка листа должна содержать channels-XXX)
+                # ищем число строк на листе страны
+        # col_channel = COLUMNS_CHANNELS.get(country, None)
+        ranges = [country]
+        results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
+                                            ranges = ranges).execute()  
+        last_row = len(results['valueRanges'][0].get('values')) # последняя строка таблицы
 
-        elem_id = driver.find_element_by_id('channels-227')
-        value = elem_id.get_property('placeholder')
-        # value = elem_id.get_attribute('placeholder')
-        if ( value== "0"):
-            elem_id.set_property('text')
-        else:
-            print(value)
-        time.sleep(2)
+        ranges = [country +"!3:3"] 
+        results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
+                                            ranges = ranges, 
+                                            valueRenderOption = 'FORMATTED_VALUE',  
+                                            dateTimeRenderOption = 'FORMATTED_STRING').execute() 
+        channels_row = results['valueRanges'][0]['values'][0]  # третья строка таблицы, содержащая наименования каналов                                           
 
-        elem_id = driver.find_element_by_id('submit-button')
-        elem_id.click()
-        time.sleep(5)
+        # смотрим данные в последней строке last_row
+        ranges = [country +"!"+str(last_row)+":"+str(last_row)]  
+        results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
+                                            ranges = ranges, 
+                                            valueRenderOption = 'FORMATTED_VALUE',  
+                                            dateTimeRenderOption = 'FORMATTED_STRING').execute() 
+        values_row = results['valueRanges'][0]['values'][0]                                            
+
+        if (values_row[0] == input_date):
+            vsego = len(channels_row)
+            for i in range(1,vsego):
+                # print(channels_row[i])
+            
+                # print(values_row[i])
+
+                input_id = driver.find_element_by_id(channels_row[i])
+                time.sleep(1)
+                value = input_id.get_property('placeholder')
+                # value = input_id.get_attribute('placeholder')
+                input_id.click()
+                if ( value== "0"):
+                    # print("Поле готово для редактирования")
+                    if (values_row[i] != ''):
+                        input_id.set_property(values_row[i])
+                else:
+                    # print("Поле уже заполнено")
+                    # print(value)
+                    pass
+                time.sleep(1)
+            # конец выгрузки данных из таблицы
+
+            elem_id = driver.find_element_by_id('submit-button')
+            #  Пока по кнопке не кликаем
+            # elem_id.click()
+            time.sleep(5)
 
 
     # print ("Данные занесены")
     driver.quit()
 
-    '''
-
-    # ищем число строк на листе страны
-    for country in COUNTRIES:
-
-        ranges = [country]
-        results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
-                                            ranges = ranges).execute()  
-        last_row = len(results['valueRanges'][0].get('values'))
-        new_row = last_row + 1
-
-        # смотрим дату в последней строке
-        ranges = [country +"!A"+str(last_row)+":B"+str(last_row)] # 
-        results = service.spreadsheets().values().batchGet(spreadsheetId = spreadsheetId, 
-                                            ranges = ranges, 
-                                            valueRenderOption = 'FORMATTED_VALUE',  
-                                            dateTimeRenderOption = 'FORMATTED_STRING').execute() 
-        sheet_values = results['valueRanges'][0]['values'][0][0]
-        last_date = datetime.strptime(sheet_values, '%d.%m.%Y') #.datetime()
-        yesterday = (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1))
-        if (last_date ==  yesterday ):
-            print("Данные за сегодня надо брвть завтра")
-            sys.exit()
-        next_date = last_date + timedelta(days=1)
-
-        #  Подготавливаем граббер
-        chrome_options = webdriver.ChromeOptions() 
-        chrome_options.add_argument("--start-maximized")
-        # chrome_options.add_argument('--headless')
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])        
-        chrome_options.add_argument('--user-data-dir=C:/Users/mitkevich/AppData/Local/Google/Chrome/User Data') #Tester
-        # chrome_options.add_argument('--profile-directory=Profile 1')
-        executable_path = os.path.dirname(os.path.abspath(__file__)) + '\chromedriver.exe'
-        driver = webdriver.Chrome(executable_path=executable_path, options=chrome_options)
-
-        #  вычисляем границы даты
-        epoch = datetime.utcfromtimestamp(0)
-        ds = next_date + timedelta(hours=7)
-        de = next_date + timedelta(days=1)  + timedelta(hours=7)
-        date_start = int((ds  - epoch).total_seconds()) * 1000
-        date_end = int((de  - epoch).total_seconds()) * 1000
-
-        # получаем url страны
-
-        channel = YOUTUBE_CHANNELS.get(country,'MINE')
-        # channel = 'UCxOgmpeNDyP_C6efcYRdYSQ'  1619679600000
-        country_url = 'https://studio.youtube.com/channel/'+ channel +'/analytics/tab-reach_viewers/period-'+ str(date_start)+','+str(date_end)
-        driver.get(country_url)
-        # ищем табулятор просмотров
-        time.sleep(5)
-        elem_id = driver.find_element_by_id("VIEWS-tab")
-        elem_id.click()
-        time.sleep(3)
-        # ищем график и клмикаем в него
-        elem_id = driver.find_element_by_xpath('//*[name()="svg"]/*[name()="g"]/*[name()="rect"]')
-        elem_id.click()
-        time.sleep(3)
-        elem_id = driver.find_element_by_xpath('//div[@id="title" and @class="style-scope yta-hovercard"]')
-        print(elem_id.text)
-        elem_id = driver.find_element_by_xpath('//div[@id="value" and @class="style-scope yta-hovercard"]')
-        curr_views = elem_id.text.strip()
-        print(curr_views)
-        time.sleep(5)
-
-        #  заполняем новую строчку
-        new_range = country +"!A"+str(new_row)+":B"+str(new_row)
-        curr_date = next_date.date()
-        results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
-            "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
-            "data": [
-                {"range":  new_range,
-                "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
-                "values": [
-                            [str(curr_date), curr_views] # Заполняем одну строку
-                ]}
-            ]
-        }).execute()
-        print ("Данные занесены")
-    driver.quit()
-    '''
     
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()
