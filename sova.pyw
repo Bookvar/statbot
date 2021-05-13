@@ -9,7 +9,7 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
 
 
-COUNTRIES = ['LV']
+COUNTRIES = ['AM','LV']
 BRANDS = {
     'BN':'Baltnews',
     'AB':'Sputnik Abkhazia',
@@ -113,28 +113,30 @@ def main():
                                             valueRenderOption = 'FORMATTED_VALUE',  
                                             dateTimeRenderOption = 'FORMATTED_STRING').execute() 
         values_row = results['valueRanges'][0]['values'][0]                                            
+        row_date =datetime.strptime(values_row[0], '%d.%m.%Y')
+        if (row_date == input_date):
+            vsego_channels = len(channels_row)
+            vsego_values = len(values_row)
 
-        if (values_row[0] == input_date):
-            vsego = len(channels_row)
-            for i in range(1,vsego):
+            for i in range(1,vsego_channels):
                 # print(channels_row[i])
             
                 # print(values_row[i])
-
-                input_id = driver.find_element_by_id(channels_row[i])
-                time.sleep(1)
-                value = input_id.get_property('placeholder')
-                # value = input_id.get_attribute('placeholder')
-                input_id.click()
-                if ( value== "0"):
-                    # print("Поле готово для редактирования")
-                    if (values_row[i] != ''):
-                        input_id.set_property(values_row[i])
-                else:
-                    # print("Поле уже заполнено")
-                    # print(value)
-                    pass
-                time.sleep(1)
+                if ( i < vsego_values):
+                    input_id = driver.find_element_by_id(channels_row[i])
+                    time.sleep(1)
+                    value = input_id.get_property('placeholder')
+                    # value = input_id.get_attribute('placeholder')
+                    input_id.click()
+                    if ( value== "0"):
+                        # print("Поле готово для редактирования")
+                        if (values_row[i] != ''):
+                            input_id.send_keys(values_row[i])
+                    else:
+                        # print("Поле уже заполнено")
+                        # print(value)
+                        pass
+                    time.sleep(1)
             # конец выгрузки данных из таблицы
 
             elem_id = driver.find_element_by_id('submit-button')
