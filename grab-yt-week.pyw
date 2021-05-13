@@ -1,3 +1,7 @@
+#  В прошлом варианте не учитывался факт того, что ютуб придерживает выбор даты, пока данные за неё  не подготовлены окончательно, 
+# а у нас был прямой забор данных, на время запроса, а это всё-таки не итоговые данные. 
+# меняем алгоритм, но забирать сможем за последние 7 доступных дней
+
 from selenium import webdriver # pip install selenium
 import pyautogui # pip install pyautogui
 import os, time, sys
@@ -7,19 +11,36 @@ import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
 
-
 COUNTRIES = ['LV']
 YOUTUBE_CHANNELS = {'LV':'UCxOgmpeNDyP_C6efcYRdYSQ',
                     'KZ':'UCN6bgSC5mdl8J7y7S9N2qSQ',
                     'BN':'UCwDdQgITt3pgdc_j3O764Hg'}
 
-COLUMNS_CHANNELS =  {'LV':'F'}                   
+COLUMNS_CHANNELS =  {'LV':'F'}     
 
+#  Для перевода месяцев на русском в номер месяца
+RU_MONTH_VALUES = {
+    'января': 1,
+    'февраля': 2,
+    'марта': 3,
+    'апреля': 4,
+    'мая': 5,
+    'июня': 6,
+    'июля': 7,
+    'августа': 8,
+    'сентября': 9,
+    'октября': 10,
+    'ноября': 10,
+    'декабря': 12,
+}
+
+def int_value_from_ru_month(date_str):
+    for k, v in RU_MONTH_VALUES.items():
+        date_str = date_str.replace(k, str(v))
+    return date_str
 
 def main():
-
     #  Работа с таблицей
-
     # Читаем ключи из файла
     CREDENTIALS_FILE = 'sputnik-analitics-python.json'  # Имя файла с закрытым ключом для таблиц, вы должны подставить свое
     credentials_sheets = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
@@ -44,11 +65,17 @@ def main():
                                             valueRenderOption = 'FORMATTED_VALUE',  
                                             dateTimeRenderOption = 'FORMATTED_STRING').execute() 
         sheet_values = results['valueRanges'][0]['values'][0][0]
-        last_date = datetime.strptime(sheet_values, '%d.%m.%Y') #.datetime()
+        #  Последняя дата в таблице
+        last_date = datetime.strptime(sheet_values, '%d.%m.%Y') #.datetime() 
+        #  Вычисляем дату вчерашнего дня
         yesterday = (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1))
+        #  Вычисляем дату позавчерашнего  дня
+        before_yesterday = yesterday - timedelta(days=1)
+        #  Если даты равны, новые данные за сегодняшний день брать рано, выходим из скрипта
         if (last_date ==  yesterday ):
-            print("Данные за сегодня надо брвть завтра")
+            print("Данные за сегодня надо брать завтра")
             sys.exit()
+        # Дата меньше 
         next_date = last_date + timedelta(days=1)
         
         #  Подготавливаем граббер
@@ -63,43 +90,71 @@ def main():
         executable_path = os.path.dirname(os.path.abspath(__file__)) + '\chromedriver.exe'
         driver = webdriver.Chrome(executable_path=executable_path, options=chrome_options)
 
-
-
-
-        #  вычисляем границы даты для запроса
-        epoch = datetime.utcfromtimestamp(0)
-        ds = next_date + timedelta(hours=7)
-        de = next_date + timedelta(days=1)  + timedelta(hours=7)
-        date_start = int((ds  - epoch).total_seconds()) * 1000
-        date_end = int((de  - epoch).total_seconds()) * 1000
-
-        # получаем url страны
+        # Если последняя дата в таблице ранее чем позавчера, используем метод выборки конкретного дня, 
+        # иначе (то есть за вчера)  используем метод последнего дня последней недели.
 
         channel = YOUTUBE_CHANNELS.get(country,'MINE')
-        # channel = 'UCxOgmpeNDyP_C6efcYRdYSQ'  1619679600000
-        country_url = 'https://studio.youtube.com/channel/'+ channel +'/analytics/tab-reach_viewers/period-'+ str(date_start)+','+str(date_end)
-        # analytics/tab-reach_viewers/period-week 
+
+        if (last_date ==  before_yesterday ):
+            #  итак просто берём данные последней доступной недели
+            country_url = 'https://studio.youtube.com/channel/'+ channel +'/analytics/tab-reach_viewers/period-week'
+        else:
+            #  вычисляем границы даты для запроса
+            epoch = datetime.utcfromtimestamp(0)
+            ds = next_date + timedelta(hours=7)
+            de = next_date + timedelta(days=1)  + timedelta(hours=7)
+            date_start = int((ds  - epoch).total_seconds()) * 1000
+            date_end = int((de  - epoch).total_seconds()) * 1000
+
+            country_url = 'https://studio.youtube.com/channel/'+ channel +'/analytics/tab-reach_viewers/period-'+ str(date_start)+','+str(date_end)
+
         driver.get(country_url)
-        # ищем табулятор просмотров
+        # ищем табулятор показов
         time.sleep(5)
         elem_id = driver.find_element_by_id("VIDEO_THUMBNAIL_IMPRESSIONS-tab") # показы
         # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
         elem_id.click()
         time.sleep(3)
-        # ищем график и клмикаем в него
-        elem_id = driver.find_element_by_xpath('//*[name()="svg"]/*[name()="g"]/*[name()="rect"]')
+        #  если смотрим график на неделю, то смотрим за какой период доступны данные.
+        # elem_id = driver.find_element_by_xpath('//div[@id="yta-time-picker" and @class="label-text style-scope ytcp-dropdown-trigger"]')
+        
+        if (last_date ==  before_yesterday ):
+            elem_id = driver.find_element_by_xpath('//div[@class="label-text style-scope ytcp-dropdown-trigger"]')
+            curr_period = elem_id.text.strip()
+            print(curr_period)
+        
+        # ищем график и клмикаем в него. при этом почему-то всплывает окошко показаний на последнюю дату, что нам и надо
+
+        # elem_id = driver.find_element_by_xpath('//*[name()="svg"]/*[name()="g"]/*[name()="rect"]')
+        elem_id = driver.find_element_by_xpath('//div[@ id="aspect-ratio-four-one-container"]')
+        time.sleep(1)
         elem_id.click()
         time.sleep(3)
+
         elem_id = driver.find_element_by_xpath('//div[@id="title" and @class="style-scope yta-hovercard"]')
+        #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
         print(elem_id.text)
+        #  преобразуем в нужный вид
+        curr_end_date_text = int_value_from_ru_month(elem_id.text[4:][:-3])
+        print(curr_end_date_text)
+        curr_end_date = datetime.strptime(curr_end_date_text, '%d %m %Y')
+        print(curr_end_date)
         elem_id = driver.find_element_by_xpath('//div[@id="value" and @class="style-scope yta-hovercard"]')
         curr_views = elem_id.text.strip()
         print(curr_views)
         time.sleep(5)
 
+
         #  заполняем новую строчку - добавляя дату
+
         new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
         curr_date = next_date.date()
+
+        #  если такая дата в таблице уже есть 
+        if (last_date ==  curr_date):
+            print("Такая дата в таблице есть")
+            sys.exit()
+
         results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
             "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
             "data": [
