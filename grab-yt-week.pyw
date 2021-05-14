@@ -176,31 +176,34 @@ def main():
 
         #  заполняем значения
          
-        if (last_date ==  yesterday ): #  если дата уже была
-            new_range = country +"!A"+str(last_row)+":A"+col_channel+str(last_row)
+        if (last_date ==  curr_end_date ): #  если дата уже была
+            #  то и делать ничего не надо
+            # new_range = country +"!A"+str(last_row)+":A"+col_channel+str(last_row)
+            # curr_date = last_date.date()
+            pass
         else: 
             new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
+            curr_date = next_date.date()
 
-        curr_date = next_date.date()
 
-        results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
-            "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
-            "data": [
-                {"range":  new_range,
-                "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
-                "values": [
-                            [str(curr_date)] # Заполняем одну строку
-                ]}
-            ]
-        }).execute()
+            results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
+                "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
+                "data": [
+                    {"range":  new_range,
+                    "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
+                    "values": [
+                                [str(curr_date)] # Заполняем одну строку
+                    ]}
+                ]
+            }).execute()
 
         # вставляем показы
-        if (last_date ==  yesterday ): #  если дата уже была
+        if (last_date ==  curr_end_date ): #  если дата уже была
             new_range = country +"!"+col_channel+str(last_row)+":"+col_channel+str(last_row)
         else:        
             new_range = country +"!"+col_channel+str(new_row)+":"+col_channel+str(new_row)
 
-        curr_date = next_date.date()
+        # curr_date = next_date.date()
         results = service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
             "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
             "data": [
