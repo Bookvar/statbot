@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 import httplib2 
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
+#  работат с оутлук
+import win32com.client # pip install pywin32
 
 
 COUNTRIES = ['LV']
@@ -49,6 +51,54 @@ def shits_column_name_to_number(column_name):
         sum = sum + (ord(i) - ord('A') )
     return sum
     
+
+# Отправка сообщения
+def sentReply(to_address, subject, country='', view_prev='', view_curr=''):
+    # инициализируем объект outlook
+    olk = win32com.client.Dispatch("Outlook.Application")
+    Msg = olk.CreateItem(0)
+     
+    # формируем письма, выставляя адресата, тему и текст
+    Msg.To = to_address
+    Msg.Subject = subject
+ 
+    Msg.HtmlBody = """   
+        <html>           
+        <head> 
+        <style>
+        .td_views {
+          vertical-align: "middle";
+          text-align: "center";
+        }
+        </style>
+        </head>
+        <body>
+        <p>
+        Здравствуйте, внесены изменения!
+        </p>
+        <h3>Внимание, парсинг автоматический</h3>
+        <table border="1">
+          <caption>
+          Итоги 
+          </caption> 
+          <tr>
+            <th>Страна</th>
+            <th>Было</th>
+            <th>Стало</th>
+          </tr>
+          <tr><td>
+          """ +country+ """ 
+          </td> <td class="td_views">
+          """+ view_prev+"""
+          </td><td class="td_views"> 
+          """+ view_curr+ """ </td><tr> 
+        </table>
+        <br>
+        </body>
+        </html>
+        """
+    # и отправляем
+    Msg.Send()
 
 
 def main():
@@ -91,6 +141,10 @@ def main():
         #  Вычисляем дату позавчерашнего  дня
         before_yesterday = yesterday - timedelta(days=1)
         
+        # rangesV = [country +"!"+col_channel+str(last_row)+":"+col_channel+str(last_row)] # 
+        # request = service.spreadsheets().values().get(spreadsheetId=spreadsheetId, 
+        #                                     range=rangesV, valueRenderOption=value_render_option, dateTimeRenderOption=date_time_render_option)
+        # response = request.execute()
 
         #  Если дата за вчера есть, то надо проверить есть ли там значение показов.
         
@@ -182,6 +236,7 @@ def main():
                 print("Данные бывшие {0} и текущие {1} совпадают".format(view_values,curr_views))
             else:
                 print("Данные бывшие {0} и текущие {1} не совпадают".format(view_values,curr_views))
+                # sentReply('m.mitkevich@sputniknews.com', 'Выявлено расхождение', country, view_values, curr_views) 
         else: 
             new_range = country +"!A"+str(new_row)+":A"+col_channel+str(new_row)
             curr_date = next_date.date()
@@ -219,6 +274,7 @@ def main():
         }).execute()
 
         print ("Данные занесены")
+        # sentReply('m.mitkevich@sputniknews.com', 'Внесены новые данные', country, view_values, curr_views) 
 
         driver.quit()
 

@@ -9,13 +9,12 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
 
 
-COUNTRIES = ['AM','LV']
+COUNTRIES = ['BN', 'AB','AM','GE','KZ','LV']
 BRANDS = {
     'BN':'Baltnews',
     'AB':'Sputnik Abkhazia',
     'AM':'Sputnik Armenia',
     'AZ':'Sputnik Azerbaijan',
-    'UA':'Ukraina.ru',
     'GE':'Sputnik Georgia',
     'KZ':'Sputnik Kazakhstan',
     'KG':'Sputnik Kyrgyzstan',
@@ -26,7 +25,9 @@ BRANDS = {
     'TJ':'Sputnik Tajikistan',
     'UZ':'Sputnik Uzbekistan',
     'SBZ':'Sputnik Ближнее зарубежье',
-    'SRU':'Sputnik на русском'}
+    'SRU':'Sputnik на русском',
+    'UA':'Ukraina.ru'
+    }
 
 def main():
     
@@ -59,37 +60,33 @@ def main():
     driver.get(country_url)
     # ищем табулятор просмотров
     time.sleep(5)
-    elem_id = driver.find_element_by_id("input-date")
-    print(elem_id.text)
-    input_date = datetime.strptime(elem_id.text, 'Input date: %d.%m.%Y') #.date()
-    if (input_date == yesterday_date):
-        print('Дата на сайте корректна')
-    else:
-        print('Дата на сайте некорректна')
-        sys.exit()
-    
-    print(input_date)
 
-    elem_id = driver.find_element_by_id("current-time")
-    print(elem_id.text)
-
-    # elem_id = driver.find_element_by_id("region")
-    # elem_id.click()
-    
-
-    select = Select(driver.find_element_by_id('region'))
+    select = Select(driver.find_element_by_id('region-select'))
     select.select_by_value('52') # Ближнее Зарубежье
     time.sleep(1)
-
 
     # elem_id.click()
     time.sleep(3)
     #  цикл по странам
     for country in COUNTRIES:
         brand = BRANDS.get(country, None)
-        select = Select(driver.find_element_by_id('brand'))
+        select = Select(driver.find_element_by_id('brand-select'))
         select.select_by_value(brand)
         time.sleep(1)
+
+        # Теперь открылось поле даты ввода, вставляем сюда кусок что раньше был за пределами цикла
+        #  
+        elem_id = driver.find_element_by_id("input-date")
+        value = elem_id.get_property('value')
+        print(value)
+        input_date = datetime.strptime(value, '%Y-%m-%d') #.date()
+        if (input_date == yesterday_date):
+            print('Дата на сайте корректна')
+        else:
+            print('Дата на сайте некорректна')
+            sys.exit()
+        print(input_date)
+        # 
 
         # цикл по площадкам страны (берём из гуглтаблицы, третья строка листа должна содержать channels-XXX)
                 # ищем число строк на листе страны
@@ -139,9 +136,9 @@ def main():
                     time.sleep(1)
             # конец выгрузки данных из таблицы
 
-            elem_id = driver.find_element_by_id('submit-button')
-            #  Пока по кнопке не кликаем
-            # elem_id.click()
+            elem_id = driver.find_element_by_id('button-submit')
+            #  Пока по кнопке не кликаем или кликаем?
+            elem_id.click()
             time.sleep(5)
 
 
