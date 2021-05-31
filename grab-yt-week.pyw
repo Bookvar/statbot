@@ -5,12 +5,11 @@
 from selenium import webdriver # pip install selenium
 import pyautogui # pip install pyautogui
 import os, time, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 # Подключаем библиотеки для работы с таблицами
 import httplib2 
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
-
 
 COUNTRIES = ['LV']
 YOUTUBE_CHANNELS = {'LV':'UCxOgmpeNDyP_C6efcYRdYSQ',
@@ -41,14 +40,7 @@ def int_value_from_ru_month(date_str):
     return date_str
 
 
-def shits_column_name_to_number(column_name):
-    column_name = column_name.upper()
-    sum = 0
-    for i in column_name:
-        sum = sum * 26
-        sum = sum + (ord(i) - ord('A') )
-    return sum
-    
+
 
 
 def main():
