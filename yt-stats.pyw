@@ -113,6 +113,9 @@ def main():
             column_values_list = worksheet.col_values(column_num)
             # всего заполненнх значений
             num_filled_cells = len(column_values_list) - 3
+            # последние два дня перезаполняем, для этого
+            if (num_filled_cells > 2):
+                num_filled_cells -= 2
             # дата, с которой продолжим заполнять
             date_start = date_begin + timedelta(days=num_filled_cells)
             date_list = [date_start + timedelta(days=x)

@@ -1,3 +1,8 @@
+# Получение статистики использования API по активированным вами тарифам
+# https://api.tgstat.ru/usage/stat?token=c22f439d88f5cf122e9b8d281e578574
+# Пример запроса от 01-04-2021 - на тарифе S вернёт последние 10 дней
+# https://api.tgstat.ru/channels/views?token=c22f439d88f5cf122e9b8d281e578574&channelId=@sputniklive&startDate=1617224400&group=day
+
 import time
 import ast
 from datetime import datetime, timedelta, date
@@ -19,14 +24,16 @@ date_end = (datetime.today().replace(hour=0, minute=0,
 # таким образом мы знаем сколько записей должно быть в таблице, как разницу дат в днях
 numdays = (date_end - date_begin).days + 1
 
-
-COUNTRIES = ['BN','AB','SBZ']
+# COUNTRIES = ['BN','AB','AM','AZ','BL','GE','KZ','KG','LV','LT','ML','OS','TJ','UZ','SBZ','UA','SRU' ]
+COUNTRIES = ['BN','AB','AM','AZ','BL','GE','KZ','KG','ML','OS','TJ','UZ','SBZ','UA']
 TG_CHANNEL_IDS = config.TG_CHANNEL_IDS
 TG_CHANNEL_COL = config.TG_CHANNEL_COL
 access_token = config.TG_ACCESS_TOKEN
 interval = "day"
 
 # функция для преобразования имени колонки в номер
+
+
 def shits_column_name_to_number(column_name):
     column_name = column_name.upper()
     sum = 0
@@ -36,6 +43,8 @@ def shits_column_name_to_number(column_name):
     return sum+1
 
 # функция запроса к api tgstat
+
+
 def get_views(channel_id, date_curr):
     date_from = date_curr
     date_to = date_from+timedelta(days=1)
@@ -43,18 +52,18 @@ def get_views(channel_id, date_curr):
     timestamp_to = int(time.mktime(date_to.timetuple())-1)
     r = requests.get("https://api.tgstat.ru/channels/views",
                      params={
-                        "token": access_token,
-                        "channelId": channel_id,
-                        "startDate": timestamp_from,
-                        "endDate": timestamp_to,
-                        "group": interval
+                         "token": access_token,
+                         "channelId": channel_id,
+                         "startDate": timestamp_from,
+                         "endDate": timestamp_to,
+                         "group": interval
                      }
                      )
     response = r.json()
     # print(date_curr,' ',timestamp_from,' ',timestamp_to,' ' , response)
-    views = ((response.get('response', None))[0]).get('views_count',None)
+    views = ((response.get('response', None))[0]).get('views_count', None)
     # views = ((response.get('response', None))[0]).get(
-        #  'visitors', None).get('views', None)
+    #  'visitors', None).get('views', None)
     # print(views)
     return views
 
@@ -62,6 +71,7 @@ def get_views(channel_id, date_curr):
 def main():
     # цикл по странам
     for country in COUNTRIES:
+        print(country)
         # выбираем лист страны
         worksheet = sheet.worksheet(country)
         # берём список групп VK страны
