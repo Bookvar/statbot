@@ -9,7 +9,7 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
 
 
-COUNTRIES = ['BN','BL', 'AB','AM','GE','KZ','LV']
+COUNTRIES = ['BN','AB','AM','AZ','BL','GE','KZ','KG','LV','LT','ML','OS','TJ','UZ','SBZ','SRU','UA' ]
 BRANDS = {
     'BN':'Baltnews',
     'AB':'Sputnik Abkhazia',
