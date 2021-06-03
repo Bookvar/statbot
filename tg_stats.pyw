@@ -32,8 +32,6 @@ access_token = config.TG_ACCESS_TOKEN
 interval = "day"
 
 # функция для преобразования имени колонки в номер
-
-
 def shits_column_name_to_number(column_name):
     column_name = column_name.upper()
     sum = 0
@@ -43,8 +41,6 @@ def shits_column_name_to_number(column_name):
     return sum+1
 
 # функция запроса к api tgstat
-
-
 def get_views(channel_id, date_curr):
     date_from = date_curr
     date_to = date_from+timedelta(days=1)
