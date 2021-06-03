@@ -29,10 +29,10 @@ numdays = (date_end - date_begin).days + 1
 yesterday = (datetime.today().replace(hour=0, minute=0,
              second=0, microsecond=0) - timedelta(days=1))
 
-COUNTRIES = ['LV']
+COUNTRIES = ['AB', 'LV']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
-
+TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
 
 
 #  Для перевода месяцев на русском в номер месяца
@@ -40,6 +40,7 @@ RU_MONTH_VALUES = {
     'января': 1,
     'февраля': 2,
     'марта': 3,
+    'апр.': 4,
     'апреля': 4,
     'мая': 5,
     'июня': 6,
@@ -53,6 +54,7 @@ RU_MONTH_VALUES = {
 
 # преобразуем имя колонки в номер
 
+
 def shits_column_name_to_number(column_name):
     column_name = column_name.upper()
     sum = 0
@@ -60,6 +62,7 @@ def shits_column_name_to_number(column_name):
         sum = sum * 26
         sum = sum + (ord(i) - ord('A'))
     return sum+1
+
 
 def int_value_from_ru_month(date_str):
     for k, v in RU_MONTH_VALUES.items():
@@ -98,15 +101,45 @@ def main():
     # цикл по странам
     for country in COUNTRIES:
         # выбираем лист страны
+        print(country)
+        # Переключаем на нужный аккаунт
+        country_url = 'https://studio.youtube.com/channel/'
+        driver.get(country_url)
+        time.sleep(3)
+        # ищем кнопку аватара
+        elem_id = driver.find_element_by_id("avatar-btn")  #
+        elem_id.click()
+        time.sleep(1)
+        # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
+        elem_id = driver.find_element_by_link_text("Сменить аккаунт")
+        elem_id.click()
+        time.sleep(2)
+        # elem_id = driver.find_element_by_link_text("Sputnik Абхазия")
+        # elem_id = driver.find_element_by_partial_link_text("Абхазия")
+
         worksheet = sheet.worksheet(country)
         # берём список каналов Youtube страны
         eYOUTUBE_CHANNELS = ast.literal_eval(YOUTUBE_CHANNELS)
         GROUP_CHANNELS = eYOUTUBE_CHANNELS.get(country, None)
+
         for channel in GROUP_CHANNELS:
             eCOLUMNS_CHANNELS = ast.literal_eval(COLUMNS_CHANNELS)
             COL_CHANNELS = eCOLUMNS_CHANNELS.get(country, None)
+            eTITLES_YT_CHANNELS = ast.literal_eval(TITLES_YT_CHANNELS)
+            titles_yt_channels = eTITLES_YT_CHANNELS.get(country, None)
+
             # берем индекс группы
             idx = GROUP_CHANNELS.index(channel)
+
+            title_channel = titles_yt_channels[idx]
+            elem_ids = driver.find_elements_by_id("channel-title")  #
+            for elem_id in elem_ids:
+                if (elem_id.text == title_channel):
+                    print(elem_id.text)
+                    elem_id.click()
+                    break
+            time.sleep(1)
+
             column_name = COL_CHANNELS[idx]
             column_num = shits_column_name_to_number(column_name)
             # берём все значения в  колонке канала
@@ -122,6 +155,7 @@ def main():
                          for x in range(numdays-num_filled_cells)]
             #  цикл по дням
             for day in date_list:
+
                 date_curr = datetime.combine(day, datetime.min.time())
 
                 # запрос views на определенную дату
@@ -158,7 +192,7 @@ def main():
                     elem_id = driver.find_element_by_xpath(
                         '//div[@class="label-text style-scope ytcp-dropdown-trigger"]')
                     curr_period = elem_id.text.strip()
-                    print(curr_period)
+                    # print(curr_period)
 
                 # ищем график и клмикаем в него. при этом почему-то всплывает окошко показаний на последнюю дату, что нам и надо
 
@@ -172,7 +206,7 @@ def main():
                 elem_id = driver.find_element_by_xpath(
                     '//div[@id="title" and @class="style-scope yta-hovercard"]')
                 #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
-                print(elem_id.text)
+                # print(elem_id.text)
                 #  преобразуем в нужный вид
                 curr_end_date_text = int_value_from_ru_month(
                     elem_id.text[4:][:-3])
@@ -191,9 +225,9 @@ def main():
                 worksheet.update_cell(row_num, 1, str(date_curr)[:10])
                 worksheet.update_cell(row_num, column_num, views_curr)
                 time.sleep(3)
-                print("Данные занесены")
 
     driver.quit()
+    print("Данные занесены")
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
