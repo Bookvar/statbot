@@ -9,22 +9,22 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials	
 
 
-COUNTRIES = ['BN','AB','AM','AZ','BL','GE','KZ','KG','LV','LT','ML','OS','TJ','UZ','SBZ','SRU','UA' ]
+COUNTRIES = ['AB','AM','AZ','BL','GE','ML','OS','LV','LT','TJ','UZ','KZ','KG','BN','SBZ','SRU','UA' ]
 BRANDS = {
-    'BN':'Baltnews',
     'AB':'Sputnik Abkhazia',
     'AM':'Sputnik Armenia',
     'AZ':'Sputnik Azerbaijan',
     'BL':'Sputnik Belarus',
     'GE':'Sputnik Georgia',
-    'KZ':'Sputnik Kazakhstan',
-    'KG':'Sputnik Kyrgyzstan',
-    'LV':'Sputnik Latvia',
-    'LT':'Sputnik Lithuania',
     'ML':'Sputnik Moldova',
     'OS':'Sputnik Ossetia',
+    'LV':'Sputnik Latvia',
+    'LT':'Sputnik Lithuania',
     'TJ':'Sputnik Tajikistan',
     'UZ':'Sputnik Uzbekistan',
+    'KZ':'Sputnik Kazakhstan',
+    'KG':'Sputnik Kyrgyzstan',
+    'BN':'Baltnews',
     'SBZ':'Sputnik Ближнее зарубежье',
     'SRU':'Sputnik на русском',
     'UA':'Ukraina.ru'
