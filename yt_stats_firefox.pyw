@@ -2,27 +2,23 @@
 Переписал сниппет под firefox.
 Драйвер берём https://github.com/mozilla/geckodriver/releases
 Последий релиз был 0.29.1
-
 '''
 
-import ast
-from selenium import webdriver  # pip install selenium
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-import pyautogui  # pip install pyautogui
 import os
 import time
 import sys
 from datetime import datetime, timedelta, date
+import ast
+from selenium import webdriver  # pip install selenium
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.support.ui import Select
+import pyautogui  # pip install pyautogui
 # Подключаем библиотеки для работы с таблицами
-
 import requests
 from data import config
 # pip install gspread
 import gspread
-
-
-
 
 # получаем доступ к таблице гугл
 spreadsheetId = "1DSDFv5uXJkTcDOyuG2Yx_IW_zw4DfTgp9u5dpJzzLZ4"
@@ -41,7 +37,7 @@ numdays = (date_end - date_begin).days + 1
 yesterday = (datetime.today().replace(hour=0, minute=0,
              second=0, microsecond=0) - timedelta(days=1))
 
-COUNTRIES = ['AB','AM','AZ','GE','LV']
+COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'LV', 'LT', 'KZ', 'KG']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
@@ -55,6 +51,7 @@ RU_MONTH_VALUES = {
     'апр.': 4,
     'апреля': 4,
     'мая': 5,
+    'июн.': 6,
     'июня': 6,
     'июля': 7,
     'августа': 8,
@@ -87,16 +84,20 @@ def main():
     #  Подготавливаем граббер Firefox
 
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
-    profile = FirefoxProfile("C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot")
-    driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary, executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
-    # driver.get('https://google.com')
+    profile = FirefoxProfile(
+        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot")
+    driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
+                               executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
+    #    , log_path='geckodriver.log'
 
     # цикл по странам
     for country in COUNTRIES:
         # выбираем лист страны
         print(country)
+        worksheet = sheet.worksheet(country)
         # Переключаем на нужный аккаунт
         country_url = 'https://studio.youtube.com/channel/'
+        driver.maximize_window()
         driver.get(country_url)
         time.sleep(3)
         # ищем кнопку аватара
@@ -106,11 +107,8 @@ def main():
         # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
         elem_id = driver.find_element_by_link_text("Сменить аккаунт")
         elem_id.click()
-        time.sleep(2)
-        # elem_id = driver.find_element_by_link_text("Sputnik Абхазия")
-        # elem_id = driver.find_element_by_partial_link_text("Абхазия")
+        time.sleep(3)
 
-        worksheet = sheet.worksheet(country)
         # берём список каналов Youtube страны
         eYOUTUBE_CHANNELS = ast.literal_eval(YOUTUBE_CHANNELS)
         GROUP_CHANNELS = eYOUTUBE_CHANNELS.get(country, None)
@@ -125,13 +123,31 @@ def main():
             idx = GROUP_CHANNELS.index(channel)
 
             title_channel = titles_yt_channels[idx]
+
             elem_ids = driver.find_elements_by_id("channel-title")  #
+            time.sleep(2)
+            # elem_ids = driver.find_element_by_xpath(
+            # '//div[@id="contents" and @class="style-scope ytd-account-item-section-renderer"]')
+            # time.sleep(2)
+            
+            i = 0
             for elem_id in elem_ids:
                 if (elem_id.text == title_channel):
-                    print(elem_id.text)
-                    elem_id.click()
+                    # print(elem_id.text)
+                    # elem_id.click()
                     break
-            time.sleep(1)
+                i += 1
+            if (i == len(elem_ids)):
+                print(u'{} не найден с списке аккаунтов '.format(title_channel))
+                break
+            elem_ids[i].click()
+            time.sleep(3)
+            
+            # ''' Алтернатива начало'''
+            # select = Select(elem_ids)
+            # select.select_by_visible_text('title_channel')
+            # time.sleep(3)
+            # ''' Алтернатива конец'''
 
             column_name = COL_CHANNELS[idx]
             column_num = shits_column_name_to_number(column_name)
@@ -139,9 +155,11 @@ def main():
             column_values_list = worksheet.col_values(column_num)
             # всего заполненнх значений
             num_filled_cells = len(column_values_list) - 3
+            '''
             # последние два дня перезаполняем, для этого
             if (num_filled_cells > 2):
                 num_filled_cells -= 2
+            '''
             # дата, с которой продолжим заполнять
             date_start = date_begin + timedelta(days=num_filled_cells)
             date_list = [date_start + timedelta(days=x)
@@ -174,7 +192,7 @@ def main():
 
                 driver.get(country_url)
                 # ищем табулятор показов
-                time.sleep(3)
+                time.sleep(5)
                 elem_id = driver.find_element_by_id(
                     "VIDEO_THUMBNAIL_IMPRESSIONS-tab")  # показы
                 # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
@@ -211,13 +229,13 @@ def main():
                 time.sleep(3)
 
                 #  заполняем значения
-
-                print(day, ' ',  views_curr)
-                num_filled_cells += 1
-                row_num = num_filled_cells + 3
-                worksheet.update_cell(row_num, 1, str(date_curr)[:10])
-                worksheet.update_cell(row_num, column_num, views_curr)
-                time.sleep(3)
+                if (day == curr_end_date.date()):
+                    print(day, ' ',  views_curr)
+                    num_filled_cells += 1
+                    row_num = num_filled_cells + 3
+                    worksheet.update_cell(row_num, 1, str(date_curr)[:10])
+                    worksheet.update_cell(row_num, column_num, views_curr)
+                    time.sleep(3)
 
     driver.quit()
     print("Данные занесены")
