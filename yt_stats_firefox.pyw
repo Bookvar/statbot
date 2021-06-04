@@ -37,7 +37,8 @@ numdays = (date_end - date_begin).days + 1
 yesterday = (datetime.today().replace(hour=0, minute=0,
              second=0, microsecond=0) - timedelta(days=1))
 
-COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'LV', 'LT', 'KZ', 'KG']
+COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
+             'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
@@ -129,7 +130,7 @@ def main():
             # elem_ids = driver.find_element_by_xpath(
             # '//div[@id="contents" and @class="style-scope ytd-account-item-section-renderer"]')
             # time.sleep(2)
-            
+
             i = 0
             for elem_id in elem_ids:
                 if (elem_id.text == title_channel):
@@ -142,7 +143,7 @@ def main():
                 break
             elem_ids[i].click()
             time.sleep(3)
-            
+
             # ''' Алтернатива начало'''
             # select = Select(elem_ids)
             # select.select_by_visible_text('title_channel')
