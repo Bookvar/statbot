@@ -77,15 +77,12 @@ def main():
     # ищем табулятор просмотров
     time.sleep(5)
 
-    select = Select(driver.find_element_by_id('region-select'))
-    select.select_by_value('52') # Ближнее Зарубежье
-    time.sleep(1)
-
-    # elem_id.click()
-    time.sleep(3)
     #  цикл по странам
     for country in COUNTRIES:
 
+        select = Select(driver.find_element_by_id('region-select'))
+        select.select_by_value('52') # Ближнее Зарубежье
+        time.sleep(3)
 
         brand = BRANDS.get(country, None)
         select = Select(driver.find_element_by_id('brand-select'))
@@ -126,17 +123,18 @@ def main():
                         input_id.send_keys(new_value)
                     else:
                         print("Поле уже заполнено {} - новое значение {} не будет записано ".format(old_value, new_value))
-                time.sleep(1)
-
-
             # конец выгрузки данных из таблицы
-
         elem_id = driver.find_element_by_id('button-submit')
         #  Пока по кнопке не кликаем или кликаем?
         elem_id.click()
         time.sleep(5)
 
-
+        try:
+            elem_id = driver.find_element_by_id('submit-modal-button')
+            elem_id.click()
+            time.sleep(1)
+        except Exception as ex:
+            print('Exception:', ex)
     # print ("Данные занесены")
     driver.quit()
 
