@@ -38,7 +38,7 @@ yesterday = (datetime.today().replace(hour=0, minute=0,
              second=0, microsecond=0) - timedelta(days=1))
 
 COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
-             'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG']
+             'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
@@ -156,11 +156,11 @@ def main():
             column_values_list = worksheet.col_values(column_num)
             # всего заполненнх значений
             num_filled_cells = len(column_values_list) - 3
-            '''
+            
             # последние два дня перезаполняем, для этого
             if (num_filled_cells > 2):
                 num_filled_cells -= 2
-            '''
+            
             # дата, с которой продолжим заполнять
             date_start = date_begin + timedelta(days=num_filled_cells)
             date_list = [date_start + timedelta(days=x)
@@ -195,12 +195,12 @@ def main():
 
                 driver.get(country_url)
                 # ищем табулятор показов
-                time.sleep(5)
+                time.sleep(3)
                 elem_id = driver.find_element_by_id(
                     "VIDEO_THUMBNAIL_IMPRESSIONS-tab")  # показы
                 # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
                 elem_id.click()
-                time.sleep(2)
+                time.sleep(1)
 
                 if (date_curr != yesterday):
                     elem_id = driver.find_element_by_xpath(
@@ -215,7 +215,7 @@ def main():
                     '//div[@ id="aspect-ratio-four-one-container"]')
                 time.sleep(1)
                 elem_id.click()
-                time.sleep(3)
+                time.sleep(1)
 
                 elem_id = driver.find_element_by_xpath(
                     '//div[@id="title" and @class="style-scope yta-hovercard"]')
@@ -229,7 +229,7 @@ def main():
                 elem_id = driver.find_element_by_xpath(
                     '//div[@id="value" and @class="style-scope yta-hovercard"]')
                 views_curr = elem_id.text.replace(" ", "")
-                time.sleep(3)
+                time.sleep(1)
 
                 #  заполняем значения
                 if (day == curr_end_date.date()):
@@ -238,7 +238,7 @@ def main():
                     row_num = num_filled_cells + 3
                     worksheet.update_cell(row_num, 1, str(date_curr)[:10])
                     worksheet.update_cell(row_num, column_num, views_curr)
-                    time.sleep(3)
+                    time.sleep(1)
 
     driver.quit()
     print("Данные занесены")
