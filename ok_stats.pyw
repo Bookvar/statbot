@@ -29,9 +29,9 @@ date_end = (datetime.today().replace(hour=0, minute=0,
 # таким образом мы знаем сколько записей должно быть в таблице, как разницу дат в днях
 numdays = (date_end - date_begin).days + 1
 
-
-# COUNTRIES = ['BN','AB','AM','AZ','BL','GE','KZ','KG','LV','LT','ML','OS','TJ','UZ','SBZ','UA','SRU' ]
-COUNTRIES = ['BL']
+# 
+COUNTRIES = ['BN','AB','AM','AZ','BL','GE','ML','OS','LV','LT','TJ','UZ','KZ','KG','SBZ','UA','SRU' ]
+# COUNTRIES = ['BL','ML','UA']
 # gid='53622940434687'
 OK_GROUP_IDS = config.OK_GROUP_IDS
 OK_GROUP_COL = config.OK_GROUP_COL
@@ -64,10 +64,13 @@ def get_views(group_id, date_curr):
 
     r = ok.group.getStatTrends(
         gid=group_id, start_time=timestamp_from, end_time=timestamp_to, fields='RENDERINGS')
-    print(r.json())
+    # print(r.json())
     response = r.json()
     # print(date_curr,' ',timestamp_from,' ',timestamp_to,' ' , response)
-    views = ((response.get('renderings', None))[0]).get('value', None)
+    try: 
+        views = ((response.get('renderings', None))[0]).get('value', None)
+    except Exception as ex:
+        views = ""
     return views
 
 
@@ -82,6 +85,8 @@ def main():
         # берём список групп VK страны
         eOK_GROUP_IDS = ast.literal_eval(OK_GROUP_IDS)
         GROUP_IDS = eOK_GROUP_IDS.get(country, None)
+        if GROUP_IDS == None:
+            continue
         for group_id in GROUP_IDS:
             eOK_GROUP_COL = ast.literal_eval(OK_GROUP_COL)
             GROUP_COL = eOK_GROUP_COL.get(country, None)
@@ -92,7 +97,7 @@ def main():
             # берём все значения в  колонке канала
             column_values_list = worksheet.col_values(column_num)
             # всего заполненнх значений
-            num_filled_cells = len(column_values_list) - 3
+            num_filled_cells = max(0, len(column_values_list) - 3)
             # дата, с которой продолжим заполнять
             date_start = date_begin + timedelta(days=num_filled_cells)
             date_list = [date_start + timedelta(days=x)
@@ -102,12 +107,13 @@ def main():
                 date_curr = day
                 # запрос views на определенную дату
                 views_curr = get_views(group_id, date_curr)
-                print(day, ' ',  views_curr)
-                num_filled_cells += 1
-                row_num = num_filled_cells + 3
-                worksheet.update_cell(row_num, 1, str(date_curr))
-                worksheet.update_cell(row_num, column_num, views_curr)
-                time.sleep(3)
+                if (views_curr != ""):
+                    print(day, ' ',  views_curr)
+                    num_filled_cells += 1
+                    row_num = num_filled_cells + 3
+                    worksheet.update_cell(row_num, 1, str(date_curr))
+                    worksheet.update_cell(row_num, column_num, views_curr)
+                    time.sleep(3)
 
 
     '''
