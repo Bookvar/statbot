@@ -39,10 +39,10 @@ yesterday = (datetime.today().replace(hour=0, minute=0,
 
 COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
              'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
+
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
-
 
 #  Для перевода месяцев на русском в номер месяца
 RU_MONTH_VALUES = {
@@ -140,7 +140,7 @@ def main():
                 i += 1
             if (i == len(elem_ids)):
                 print(u'{} не найден с списке аккаунтов '.format(title_channel))
-                break
+                continue
             elem_ids[i].click()
             time.sleep(3)
 
