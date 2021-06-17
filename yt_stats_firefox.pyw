@@ -39,7 +39,7 @@ yesterday = (datetime.today().replace(hour=0, minute=0,
 
 COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
              'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
-
+# COUNTRIES = ['KG']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
@@ -95,8 +95,9 @@ def main():
     #  Подготавливаем граббер Firefox
 
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
+        # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
     profile = FirefoxProfile(
-        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot")
+        "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot")
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
                                executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
     #    , log_path='geckodriver.log'
@@ -111,20 +112,30 @@ def main():
         driver.maximize_window()
         driver.get(country_url)
         time.sleep(3)
-        # ищем кнопку аватара
-        elem_id = driver.find_element_by_id("avatar-btn")  #
-        elem_id.click()
-        time.sleep(1)
-        # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
-        elem_id = driver.find_element_by_link_text("Сменить аккаунт")
-        elem_id.click()
-        time.sleep(3)
+        # # ищем кнопку аватара
+        # elem_id = driver.find_element_by_id("avatar-btn")  #
+        # elem_id.click()
+        # time.sleep(1)
+        # # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
+        # elem_id = driver.find_element_by_link_text("Сменить аккаунт")
+        # elem_id.click()
+        # time.sleep(3)
 
         # берём список каналов Youtube страны
         eYOUTUBE_CHANNELS = ast.literal_eval(YOUTUBE_CHANNELS)
         GROUP_CHANNELS = eYOUTUBE_CHANNELS.get(country, None)
 
         for channel in GROUP_CHANNELS:
+            # ищем кнопку аватара
+            elem_id = driver.find_element_by_id("avatar-btn")  #
+            elem_id.click()
+            time.sleep(1)
+            # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
+            elem_id = driver.find_element_by_link_text("Сменить аккаунт")
+            elem_id.click()
+            time.sleep(3)
+
+
             eCOLUMNS_CHANNELS = ast.literal_eval(COLUMNS_CHANNELS)
             COL_CHANNELS = eCOLUMNS_CHANNELS.get(country, None)
             eTITLES_YT_CHANNELS = ast.literal_eval(TITLES_YT_CHANNELS)
@@ -229,6 +240,7 @@ def main():
 
                 elem_id = driver.find_element_by_xpath(
                     '//div[@id="title" and @class="style-scope yta-hovercard"]')
+                time.sleep(1)
                 #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
                 # print(elem_id.text)
                 #  преобразуем в нужный вид
