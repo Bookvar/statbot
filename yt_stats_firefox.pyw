@@ -39,7 +39,7 @@ yesterday = (datetime.today().replace(hour=0, minute=0,
 
 COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
              'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
-
+# COUNTRIES = ['KG']
 YOUTUBE_CHANNELS = config.YOUTUBE_CHANNELS
 COLUMNS_CHANNELS = config.COLUMNS_CHANNELS
 TITLES_YT_CHANNELS = config.TITLES_YT_CHANNELS
@@ -95,6 +95,7 @@ def main():
     #  Подготавливаем граббер Firefox
 
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
+        # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
     profile = FirefoxProfile(
         "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot") # "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot"
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
@@ -227,6 +228,7 @@ def main():
 
                 elem_id = driver.find_element_by_xpath(
                     '//div[@id="title" and @class="style-scope yta-hovercard"]')
+                time.sleep(1)
                 #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
                 # print(elem_id.text)
                 #  преобразуем в нужный вид
