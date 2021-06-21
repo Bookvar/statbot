@@ -96,7 +96,7 @@ def main():
 
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
     profile = FirefoxProfile(
-        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot")
+        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot") # "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot"
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
                                executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
     #    , log_path='geckodriver.log'
@@ -111,20 +111,21 @@ def main():
         driver.maximize_window()
         driver.get(country_url)
         time.sleep(3)
-        # ищем кнопку аватара
-        elem_id = driver.find_element_by_id("avatar-btn")  #
-        elem_id.click()
-        time.sleep(1)
-        # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
-        elem_id = driver.find_element_by_link_text("Сменить аккаунт")
-        elem_id.click()
-        time.sleep(3)
-
+        
         # берём список каналов Youtube страны
         eYOUTUBE_CHANNELS = ast.literal_eval(YOUTUBE_CHANNELS)
         GROUP_CHANNELS = eYOUTUBE_CHANNELS.get(country, None)
 
         for channel in GROUP_CHANNELS:
+            # ищем кнопку аватара
+            elem_id = driver.find_element_by_id("avatar-btn")  #
+            elem_id.click()
+            time.sleep(1)
+            # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
+            elem_id = driver.find_element_by_link_text("Сменить аккаунт")
+            elem_id.click()
+            time.sleep(3)
+        
             eCOLUMNS_CHANNELS = ast.literal_eval(COLUMNS_CHANNELS)
             COL_CHANNELS = eCOLUMNS_CHANNELS.get(country, None)
             eTITLES_YT_CHANNELS = ast.literal_eval(TITLES_YT_CHANNELS)
@@ -137,9 +138,6 @@ def main():
 
             elem_ids = driver.find_elements_by_id("channel-title")  #
             time.sleep(2)
-            # elem_ids = driver.find_element_by_xpath(
-            # '//div[@id="contents" and @class="style-scope ytd-account-item-section-renderer"]')
-            # time.sleep(2)
 
             i = 0
             for elem_id in elem_ids:
