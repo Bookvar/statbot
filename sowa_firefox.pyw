@@ -55,8 +55,8 @@ def main():
     #  Подготавливаем webdriver
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
     profile = FirefoxProfile(
-        # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
-        "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot")
+        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
+        ) #"C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot"
 
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
                                executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
