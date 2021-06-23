@@ -4,21 +4,27 @@
 Последий релиз был 0.29.1
 '''
 
-import os
-import time
-import sys
-from datetime import datetime, timedelta, date
 import ast
-from selenium import webdriver  # pip install selenium
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.support.ui import Select
+import os
+import sys
+import time
+from datetime import date, datetime, timedelta
+
+# pip install gspread
+import gspread
 import pyautogui  # pip install pyautogui
 # Подключаем библиотеки для работы с таблицами
 import requests
+from dateutil.relativedelta import relativedelta  # pip install python-dateutil
+from selenium import webdriver  # pip install selenium
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.action_chains import ActionChains
+
 from data import config
-# pip install gspread
-import gspread
+
+
 
 # получаем доступ к таблице гугл
 spreadsheetId = "1DSDFv5uXJkTcDOyuG2Yx_IW_zw4DfTgp9u5dpJzzLZ4"
@@ -38,13 +44,13 @@ yesterday = (datetime.today().replace(hour=0, minute=0,
              second=0, microsecond=0) - timedelta(days=1))
 
 # COUNTRIES = ['AB', 'AM', 'AZ', 'GE', 'BL', 'ML',
-            #  'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
-COUNTRIES = ['MMV']
+#  'OS',  'LV', 'LT', 'TJ', 'UZ', 'KZ', 'KG', 'BN', 'UA', 'SRU']
+COUNTRIES = ['AB','MMV']
 
 TW_CHANNELS = config.TW_CHANNELS
 COLUMNS_TW_CHANNELS = config.COLUMNS_TW_CHANNELS
 TITLES_TW_CHANNELS = config.TITLES_TW_CHANNELS
-
+'''
 #  Для перевода месяцев на русском в номер месяца
 RU_MONTH_VALUES = {
     'января': 1,
@@ -72,7 +78,7 @@ RU_MONTH_VALUES = {
     'дек.': 12,
 
 }
-
+'''
 # преобразуем имя колонки в номер
 
 
@@ -90,15 +96,55 @@ def int_value_from_ru_month(date_str):
         date_str = date_str.replace(k, str(v))
     return date_str
 
+# переход на первое число месяца левого календаря
+
+
+def first_day_calendar_left(driver):
+    # left_calendar_date_id = driver.find_element_by_xpath('//div[@class="calendar-date"]/table/tbody/tr[1]/td[@class="available"]')
+    left_calendar_date_id = driver.find_element_by_xpath(
+        '//div[@class="calendar left"]/div[@class="calendar-date"]/table/tbody/tr[1]/td[@class="available"]')
+    time.sleep(1)
+    left_calendar_date_id.click()
+    input_id = driver.find_element_by_xpath(
+        '//div[@class="calendar left"]/input')
+    time.sleep(1)
+    old_value = input_id.get_property('value')
+    curr_date_begin = datetime.strptime(old_value, '%m/%d/%Y')
+    return curr_date_begin
+
+# переход на первое доступное число месяца правого календаря
+def first_day_calendar_right(driver):
+    right_calendar_date_id = driver.find_element_by_xpath(
+        '//div[@class="calendar right"]/div[@class="calendar-date"]/table/tbody/*/td[@class="available in-range"]') 
+    time.sleep(1)
+    right_calendar_date_id.click()
+    input_id = driver.find_element_by_xpath(
+        '//div[@class="calendar right"]/input')
+    time.sleep(1)
+    old_value = input_id.get_property('value')
+    curr_date_end = datetime.strptime(old_value, '%m/%d/%Y')
+    return curr_date_end
+
+def get_date_begin(driver):
+    input_id = driver.find_element_by_xpath('//div[@class="calendar left"]/input')
+    old_value = input_id.get_property('value')
+    curr_date_begin = datetime.strptime(old_value, '%m/%d/%Y')
+    return curr_date_begin
+
+def get_date_end(driver):
+    input_id = driver.find_element_by_xpath('//div[@class="calendar right"]/input')
+    old_value = input_id.get_property('value')
+    curr_date_end = datetime.strptime(old_value, '%m/%d/%Y')
+    return curr_date_end
 
 def main():
 
     #  Подготавливаем граббер Firefox
 
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
-        # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
+    # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
     profile = FirefoxProfile(
-        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot") # "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot"
+        "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot")  # "C:\\Users\\bookvar\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\v2qtafeu.statbot"
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
                                executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
     #    , log_path='geckodriver.log'
@@ -108,13 +154,12 @@ def main():
         # выбираем лист страны
         print(country)
         worksheet = sheet.worksheet(country)
-        
+
         # берём список каналов Youtube страны
         eTW_CHANNELS = ast.literal_eval(TW_CHANNELS)
         GROUP_CHANNELS = eTW_CHANNELS.get(country, None)
 
         for channel in GROUP_CHANNELS:
-
 
             # Переключаем на нужный аккаунт  "https://analytics.twitter.com/user/MaratMitkevich/tweets"
             country_url = 'https://analytics.twitter.com/user/'+channel+"/tweets"
@@ -122,59 +167,20 @@ def main():
             driver.get(country_url)
             time.sleep(3)
 
-            '''
-            # ищем кнопку аватара
-            elem_id = driver.find_element_by_id("avatar-btn")  #
-            elem_id.click()
-            time.sleep(1)
-            # elem_id = driver.find_element_by_xpath('//div[@id="label" and @class="style-scope ytd-compact-link-renderer"]')
-            elem_id = driver.find_element_by_link_text("Сменить аккаунт")
-            elem_id.click()
-            time.sleep(3)
-            '''
-            eCOLUMNS_CHANNELS = ast.literal_eval(COLUMNS_CHANNELS)
+            eCOLUMNS_CHANNELS = ast.literal_eval(COLUMNS_TW_CHANNELS)
             COL_CHANNELS = eCOLUMNS_CHANNELS.get(country, None)
-            eTITLES_YT_CHANNELS = ast.literal_eval(TITLES_YT_CHANNELS)
-            titles_yt_channels = eTITLES_YT_CHANNELS.get(country, None)
-
+            eTITLES_TW_CHANNELS = ast.literal_eval(TITLES_TW_CHANNELS)
+            titles_tw_channels = eTITLES_TW_CHANNELS.get(country, None)
             # берем индекс группы
             idx = GROUP_CHANNELS.index(channel)
-
-            title_channel = titles_yt_channels[idx]
-
-            elem_ids = driver.find_elements_by_id("channel-title")  #
-            time.sleep(2)
-
-            i = 0
-            for elem_id in elem_ids:
-                if (elem_id.text == title_channel):
-                    # print(elem_id.text)
-                    # elem_id.click()
-                    break
-                i += 1
-            if (i == len(elem_ids)):
-                print(u'{} не найден с списке аккаунтов '.format(title_channel))
-                continue
-            elem_ids[i].click()
-            time.sleep(3)
-
-            # ''' Алтернатива начало'''
-            # select = Select(elem_ids)
-            # select.select_by_visible_text('title_channel')
-            # time.sleep(3)
-            # ''' Алтернатива конец'''
-
+            title_channel = titles_tw_channels[idx]
             column_name = COL_CHANNELS[idx]
             column_num = shits_column_name_to_number(column_name)
             # берём все значения в  колонке канала
             column_values_list = worksheet.col_values(column_num)
             # всего заполненнх значений
             num_filled_cells = len(column_values_list) - 3
-            
-            # последние два дня перезаполняем, для этого
-            if (num_filled_cells > 2):
-                num_filled_cells -= 2
-            
+
             # дата, с которой продолжим заполнять
             date_start = date_begin + timedelta(days=num_filled_cells)
             date_list = [date_start + timedelta(days=x)
@@ -184,76 +190,125 @@ def main():
 
                 date_curr = datetime.combine(day, datetime.min.time())
 
-                # запрос views на определенную дату
+                elem_id = driver.find_element_by_id("daterange-button")  #
+                elem_id.click()
+                time.sleep(1)
 
-                # Если дата в таблице ранее чем вчера,
-                # используем метод выборки конкретного дня,
-                # иначе (то есть за вчера)
-                # используем метод последнего дня последней недели.
+                # РАБОТА С ЛЕВЫМ КАЛЕНДАРЁМ
+                # смотрим месяц
+                curr_date_begin = get_date_begin(driver)
+                while (day.month < curr_date_begin.month):
+                    # листаем календарь влево
+                    icon_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar left"]/div[@class="calendar-date"]/table/thead/tr[1]/th[@class="prev available"]/span')  # right
+                    icon_id.click()
+                    left_calendar_date_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar left"]/div[@class="calendar-date"]/table/tbody/*/td[@class="available"]')
+                    left_calendar_date_id.click()
+                    curr_date_begin = get_date_begin(driver)
+                while (day.month > curr_date_begin.month):
+                    # листаем календарь вправо
+                    icon_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar left"]/div[@class="calendar-date"]/table/thead/tr[1]/th[@class="next available"]/span')  # right
+                    icon_id.click()
+                    left_calendar_date_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar left"]/div[@class="calendar-date"]/table/tbody/*/td[@class="available"]')
+                    left_calendar_date_id.click()
+                    curr_date_begin = get_date_begin(driver)
 
-                if (date_curr == yesterday):
-                    #  итак просто берём данные последней доступной недели
-                    country_url = 'https://studio.youtube.com/channel/' + \
-                        channel + '/analytics/tab-reach_viewers/period-week'
+                # ищем текущую дату в левом календаре
+                time.sleep(1)
+                elem_id = driver.find_element_by_xpath(
+                    '//td[contains(@class,"available active start-date")]')
+                # if (elem_id.text == str(curr_date_begin.day)):
+                if (elem_id.text == str(day.day)):
+                    elem_id.click()
                 else:
-                    #  вычисляем границы даты для запроса
-                    epoch = datetime.utcfromtimestamp(0)
-                    ds = date_curr + timedelta(hours=7)
-                    de = date_curr + timedelta(days=1) + timedelta(hours=7)
-                    date_start = int((ds - epoch).total_seconds()) * 1000
-                    date_end = int((de - epoch).total_seconds()) * 1000
+                    elem_ids = driver.find_elements_by_xpath(
+                        '//td[contains(@class,"available")]') # in-range
+                    for elem_id in elem_ids:
+                        # if (elem_id.text == str(curr_date_begin.day)):
+                        if (elem_id.text == str(day.day)):
+                            hhh = elem_id.get_attribute("class") 
+                            if hhh == "available off":
+                                continue
+                            else:
+                                elem_id.click()
+                                break
+                time.sleep(1)
 
-                    country_url = 'https://studio.youtube.com/channel/' + channel + \
-                        '/analytics/tab-reach_viewers/period-' + \
-                        str(date_start)+','+str(date_end)
+                # РАБОТА С ПРАВЫМ КАЛЕНДАРЁМ
+                # смотрим месяц
+                curr_date_end = get_date_end(driver)
+                while (day.month < curr_date_end.month):
+                    # листаем календарь влево
+                    icon_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar right"]/div[@class="calendar-date"]/table/thead/tr[1]/th[@class="prev available"]/span')  # 
+                    icon_id.click()
+                    right_calendar_date_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar right"]/div[@class="calendar-date"]/table/tbody/*/td[@class="available in-range"]')
+                    right_calendar_date_id.click()
+                    curr_date_end = get_date_end(driver)
+                while (day.month > curr_date_end.month):
+                    # листаем календарь вправо
+                    icon_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar right"]/div[@class="calendar-date"]/table/thead/tr[1]/th[@class="next available"]/span')  # right
+                    icon_id.click()
+                    right_calendar_date_id = driver.find_element_by_xpath(
+                        '//div[@class="calendar right"]/div[@class="calendar-date"]/table/tbody/*/td[@class="available"]')
+                    right_calendar_date_id.click()
+                    curr_date_end = get_date_end(driver)
 
-                driver.get(country_url)
-                # ищем табулятор показов
+                # ищем текущую дату в правом календаре
+                time.sleep(1)
+                elem_id = driver.find_element_by_xpath(
+                    '//td[contains(@class,"available active start-date")]')
+                # if (elem_id.text == str(curr_date_end.day)):
+                if (elem_id.text == str(day.day)):
+                    elem_id.click()
+                else:
+                    elem_ids = driver.find_elements_by_xpath(
+                        '//td[contains(@class,"available")]') # in-range
+                    for elem_id in elem_ids:
+                        # if (elem_id.text == str(curr_date_end.day)):
+                        if (elem_id.text == str(day.day)):    
+                            hhh = elem_id.get_attribute("class") 
+                            if hhh == "available off":
+                                continue
+                            else:
+                                elem_id.click()
+                                break
+
+
+                btn_id = driver.find_element_by_class_name('applyBtn')
+                #  Пока по кнопке не кликаем или кликаем?
+                btn_id.click()
+
+                print("Календарь выставили")
+                # //*[@id="tweet-impression-chart"]/div[2]/table/tbody/tr[1]/td[3]
+
+
+                chart_id = driver.find_element_by_id('tweet-impression-header')
+                action = ActionChains(driver)
+                action.move_to_element(chart_id).click().perform()
+                chart_id = driver.find_element_by_id('tweet-impression-chart')
+                action = ActionChains(driver)
+                action.move_to_element(chart_id).click().perform()
+
                 time.sleep(3)
-                elem_id = driver.find_element_by_id(
-                    "VIDEO_THUMBNAIL_IMPRESSIONS-tab")  # показы
-                # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
-                elem_id.click()
-                time.sleep(1)
-
-                if (date_curr != yesterday):
-                    elem_id = driver.find_element_by_xpath(
-                        '//div[@class="label-text style-scope ytcp-dropdown-trigger"]')
-                    curr_period = elem_id.text.strip()
-                    # print(curr_period)
-
-                # ищем график и клмикаем в него. при этом почему-то всплывает окошко показаний на последнюю дату, что нам и надо
-
-                # elem_id = driver.find_element_by_xpath('//*[name()="svg"]/*[name()="g"]/*[name()="rect"]')
-                elem_id = driver.find_element_by_xpath(
-                    '//div[@ id="aspect-ratio-four-one-container"]')
-                time.sleep(1)
-                elem_id.click()
-                time.sleep(1)
-
-                elem_id = driver.find_element_by_xpath(
-                    '//div[@id="title" and @class="style-scope yta-hovercard"]')
-                time.sleep(1)
-                #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
-                # print(elem_id.text)
-                #  преобразуем в нужный вид
-                curr_end_date_text = int_value_from_ru_month(
-                    elem_id.text[4:][:-3])
-                curr_end_date = datetime.strptime(
-                    curr_end_date_text, '%d %m %Y')
-                elem_id = driver.find_element_by_xpath(
-                    '//div[@id="value" and @class="style-scope yta-hovercard"]')
-                views_curr = elem_id.text.replace(" ", "")
-                time.sleep(1)
+                barshart_id = driver.find_element_by_xpath(
+                    '//div[@class="barchart-tooltip"]/table/tbody/tr[1]/td[3]')  #
+                views_curr = barshart_id.text
+                views_curr = views_curr.replace(',', '')
 
                 #  заполняем значения
-                if (day == curr_end_date.date()):
-                    print(day, ' ',  views_curr)
-                    num_filled_cells += 1
-                    row_num = num_filled_cells + 3
-                    worksheet.update_cell(row_num, 1, str(date_curr)[:10])
-                    worksheet.update_cell(row_num, column_num, views_curr)
-                    time.sleep(1)
+                # if (day == curr_end_date.date()):
+                print(day, ' ',  views_curr)
+                num_filled_cells += 1
+                row_num = num_filled_cells + 3
+                worksheet.update_cell(row_num, 1, str(date_curr)[:10])
+                worksheet.update_cell(row_num, column_num, views_curr)
+                time.sleep(1)
 
     driver.quit()
     print("Данные занесены")
