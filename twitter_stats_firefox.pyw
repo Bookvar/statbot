@@ -148,6 +148,7 @@ def main():
     driver = webdriver.Firefox(firefox_profile=profile, firefox_binary=binary,
                                executable_path="C:\\bot\\statbot\\BrowserDrivers\\geckodriver.exe")
     #    , log_path='geckodriver.log'
+    driver.maximize_window()
 
     # цикл по странам
     for country in COUNTRIES:
@@ -160,10 +161,32 @@ def main():
         GROUP_CHANNELS = eTW_CHANNELS.get(country, None)
 
         for channel in GROUP_CHANNELS:
+            # подготавливаем переход на наужную учетку
+            # 1. Заходим на станицу бренда
+            country_url = 'https://twitter.com/'+channel
+            driver.get(country_url)
+            btn_id = driver.find_element_by_xpath('//div[@data-testid="SideNav_AccountSwitcher_Button"]')  
+            btn_id.click()
+            time.sleep(2)
 
+
+
+            active_item_id = driver.find_element_by_xpath('//li[@data-testid="UserCell"]/div/div[2]/div/div/div/div[2]/div/span')  
+            channel_name = active_item_id.text[1:]
+            if (channel_name == channel):
+                # если и так активен то ничего не делаем
+                active_item_id.click()
+            else: 
+                xpath_str = '//div[@aria-label="Переключиться на учетную запись @'+channel+'"]'
+                btn_user_id = driver.find_element_by_xpath(xpath_str)
+                btn_user_id.click()
+                time.sleep(2)
+
+
+
+            
             # Переключаем на нужный аккаунт  "https://analytics.twitter.com/user/MaratMitkevich/tweets"
             country_url = 'https://analytics.twitter.com/user/'+channel+"/tweets"
-            driver.maximize_window()
             driver.get(country_url)
             time.sleep(3)
 
