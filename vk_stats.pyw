@@ -20,7 +20,7 @@ date_end = (datetime.today().replace(hour=0, minute=0,
 numdays = (date_end - date_begin).days + 1
 
 
-COUNTRIES = ['BL']
+COUNTRIES = ['AB','BL','OS','KZ','KG','UA']
 VK_GROUP_IDS = config.VK_GROUP_IDS
 VK_GROUP_COL = config.VK_GROUP_COL
 access_token = config.VK_ACCESS_TOKEN
@@ -65,6 +65,7 @@ def get_views(group_id, date_curr):
 def main():
     # цикл по странам
     for country in COUNTRIES:
+        print(country)
         # выбираем лист страны
         worksheet = sheet.worksheet(country)
         # берём список групп VK страны
@@ -95,7 +96,7 @@ def main():
                 row_num = num_filled_cells + 3
                 worksheet.update_cell(row_num, 1, str(date_curr))
                 worksheet.update_cell(row_num, column_num, views_curr)
-                time.sleep(3)
+                time.sleep(2)
 
 
 main()
