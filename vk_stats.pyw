@@ -20,7 +20,7 @@ date_end = (datetime.today().replace(hour=0, minute=0,
 numdays = (date_end - date_begin).days + 1
 
 
-COUNTRIES = ['AB','BL','OS','KZ','KG','UA']
+COUNTRIES = ['AB','BL','OS','KZ','KG','BN','UA']
 VK_GROUP_IDS = config.VK_GROUP_IDS
 VK_GROUP_COL = config.VK_GROUP_COL
 access_token = config.VK_ACCESS_TOKEN
