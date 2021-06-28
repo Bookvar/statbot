@@ -14,11 +14,10 @@ from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.support.ui import Select
 import pyautogui  # pip install pyautogui
-# Подключаем библиотеки для работы с таблицами
 import requests
 from data import config
-# pip install gspread
-import gspread
+# Подключаем библиотеки для работы с таблицами
+import gspread # pip install gspread
 
 # получаем доступ к таблице гугл
 spreadsheetId = "1DSDFv5uXJkTcDOyuG2Yx_IW_zw4DfTgp9u5dpJzzLZ4"
@@ -73,8 +72,6 @@ RU_MONTH_VALUES = {
 }
 
 # преобразуем имя колонки в номер
-
-
 def shits_column_name_to_number(column_name):
     column_name = column_name.upper()
     sum = 0
@@ -83,17 +80,13 @@ def shits_column_name_to_number(column_name):
         sum = sum + (ord(i) - ord('A'))
     return sum+1
 
-
 def int_value_from_ru_month(date_str):
     for k, v in RU_MONTH_VALUES.items():
         date_str = date_str.replace(k, str(v))
     return date_str
 
-
 def main():
-
     #  Подготавливаем граббер Firefox
-
     binary = FirefoxBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe")
         # "C:\\Users\\mitkevich\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\t2200nfq.statbot"
     profile = FirefoxProfile(
