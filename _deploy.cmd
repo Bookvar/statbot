@@ -6,5 +6,6 @@ copy vk_stats.pyw c:\bot\statbot\* /y
 copy yt_stats_firefox.pyw c:\bot\statbot\* /y
 copy twitter_stats_firefox.pyw c:\bot\statbot\* /y
 copy sowa_firefox.pyw c:\bot\statbot\* /y
+copy sowa_firefox_alt.pyw c:\bot\statbot\* /y
 TIMEOUT /T 3
 

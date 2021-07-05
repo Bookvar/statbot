@@ -110,27 +110,14 @@ def main():
         if (input_date != datetime.strptime(date_end, '%d.%m.%Y')):
             print("Даты данных и ввода не совпадают. Не пишем.")
             continue
-        ''' 
-        # Было по каналам
         list_of_channels = worksheet.row_values(3)
         number_of_channels = len(list_of_channels)
         list_of_values = worksheet.row_values(number_of_rows)
-        '''
-        # Стало по урлам площадок
-        list_of_urls = worksheet.row_values(2)
-        number_of_urls = len(list_of_urls)
-        list_of_values = worksheet.row_values(number_of_rows)
-        '''
-        #  Было по каналам 
-        for i in range(1, number_of_channels):  
-        '''
-        # Стало по урлам
-        for i in range(1, number_of_urls):
-            if i < len(list_of_values) and list_of_urls[i] != "":
-                # input_id = driver.find_element_by_id(list_of_channels[i])
-                #  `'//label[@for="Rooms"]/parent::td/following-sibling::td'`
-                xpath = "//label[contains(.,'"+list_of_urls[i]+"')]/following-sibling::input"
-                input_id = driver.find_element_by_xpath(xpath)
+        for i in range(1, number_of_channels):
+            if i < len(list_of_values) and list_of_channels[i] != "":
+                #  lll
+                input_id = driver.find_element_by_id(list_of_channels[i])
+                # time.sleep(1)
                 old_value = input_id.get_property('placeholder')
                 input_id.click()
                 new_value = list_of_values[i]
