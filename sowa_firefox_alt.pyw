@@ -116,25 +116,28 @@ def main():
         for i in range(1, number_of_channels):
             if i < len(list_of_values) and list_of_channels[i] != "":
                 #  lll
-                input_id = driver.find_element_by_id(list_of_channels[i])
-                # time.sleep(1)
-                old_value = input_id.get_property('placeholder')
-                input_id.click()
-                new_value = list_of_values[i]
-                if (new_value != ''):
-                    if (old_value == "0"):
-                        input_id.send_keys(new_value)
-                    else:
-                        # todo если данные старые неправильные, то их надо заменить
-                        if (new_value != old_value):
-                            # breakpoint()
+                try: 
+                    input_id = driver.find_element_by_id(list_of_channels[i])
+                    # time.sleep(1)
+                    old_value = input_id.get_property('placeholder')
+                    input_id.click()
+                    new_value = list_of_values[i]
+                    if (new_value != ''):
+                        if (old_value == "0"):
                             input_id.send_keys(new_value)
-                            print(
-                                "Поле уже заполнено: старое значение {} будет перзаписано новым  {} ".format(old_value, new_value))
                         else:
-                            print(
-                                "Поле уже заполнено: старое {} и новое {} значения совпадают".format(old_value, new_value))
-                        
+                            # todo если данные старые неправильные, то их надо заменить
+                            if (new_value != old_value):
+                                # breakpoint()
+                                input_id.send_keys(new_value)
+                                print(
+                                    "Поле уже заполнено: старое значение {} будет перзаписано новым  {} ".format(old_value, new_value))
+                            else:
+                                print(
+                                    "Поле уже заполнено: старое {} и новое {} значения совпадают".format(old_value, new_value))
+                except Exception as ex:
+                    print (ex)
+                            
             # конец выгрузки данных из таблицы
         elem_id = driver.find_element_by_id('button-submit')
         #  Пока по кнопке не кликаем или кликаем?

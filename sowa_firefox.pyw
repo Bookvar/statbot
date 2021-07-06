@@ -110,43 +110,35 @@ def main():
         if (input_date != datetime.strptime(date_end, '%d.%m.%Y')):
             print("Даты данных и ввода не совпадают. Не пишем.")
             continue
-        ''' 
-        # Было по каналам
-        list_of_channels = worksheet.row_values(3)
-        number_of_channels = len(list_of_channels)
-        list_of_values = worksheet.row_values(number_of_rows)
-        '''
         # Стало по урлам площадок
         list_of_urls = worksheet.row_values(2)
         number_of_urls = len(list_of_urls)
         list_of_values = worksheet.row_values(number_of_rows)
-        '''
-        #  Было по каналам 
-        for i in range(1, number_of_channels):  
-        '''
         # Стало по урлам
         for i in range(1, number_of_urls):
             if i < len(list_of_values) and list_of_urls[i] != "":
-                # input_id = driver.find_element_by_id(list_of_channels[i])
-                #  `'//label[@for="Rooms"]/parent::td/following-sibling::td'`
-                xpath = "//label[contains(.,'"+list_of_urls[i]+"')]/following-sibling::input"
-                input_id = driver.find_element_by_xpath(xpath)
-                old_value = input_id.get_property('placeholder')
-                input_id.click()
-                new_value = list_of_values[i]
-                if (new_value != ''):
-                    if (old_value == "0"):
-                        input_id.send_keys(new_value)
-                    else:
-                        # todo если данные старые неправильные, то их надо заменить
-                        if (new_value != old_value):
-                            # breakpoint()
+                try: 
+
+                    xpath = "//label[contains(.,'"+list_of_urls[i]+"')]/following-sibling::input"
+                    input_id = driver.find_element_by_xpath(xpath)
+                    old_value = input_id.get_property('placeholder')
+                    input_id.click()
+                    new_value = list_of_values[i]
+                    if (new_value != ''):
+                        if (old_value == "0"):
                             input_id.send_keys(new_value)
-                            print(
-                                "Поле уже заполнено: старое значение {} будет перзаписано новым  {} ".format(old_value, new_value))
                         else:
-                            print(
-                                "Поле уже заполнено: старое {} и новое {} значения совпадают".format(old_value, new_value))
+                            # todo если данные старые неправильные, то их надо заменить
+                            if (new_value != old_value):
+                                # breakpoint()
+                                input_id.send_keys(new_value)
+                                print(
+                                    "Поле уже заполнено: старое значение {} будет перзаписано новым  {} ".format(old_value, new_value))
+                            else:
+                                print(
+                                    "Поле уже заполнено: старое {} и новое {} значения совпадают".format(old_value, new_value))
+                except Exception as ex:
+                    print (ex)
                         
             # конец выгрузки данных из таблицы
         elem_id = driver.find_element_by_id('button-submit')
