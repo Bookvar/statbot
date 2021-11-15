@@ -66,7 +66,7 @@ RU_MONTH_VALUES = {
     'авг.': 8,
     'сент.': 9,
     'окт.': 10,
-    'нояб.': 10,
+    'нояб.': 11,
     'дек.': 12,
 
 }
@@ -195,9 +195,10 @@ def main():
                         '/analytics/tab-reach_viewers/period-' + \
                         str(date_start)+','+str(date_end)
 
+                time.sleep(1)
                 driver.get(country_url)
                 # ищем табулятор показов
-                time.sleep(3)
+                time.sleep(2)
                 elem_id = driver.find_element_by_id(
                     "VIDEO_THUMBNAIL_IMPRESSIONS-tab")  # показы
                 # elem_id = driver.find_element_by_id("VIEWS-tab") #просмотры
@@ -219,29 +220,33 @@ def main():
                 elem_id.click()
                 time.sleep(1)
 
-                elem_id = driver.find_element_by_xpath(
-                    '//div[@id="title" and @class="style-scope yta-hovercard"]')
-                time.sleep(1)
-                #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
-                # print(elem_id.text)
-                #  преобразуем в нужный вид
-                curr_end_date_text = int_value_from_ru_month(
-                    elem_id.text[4:][:-3])
-                curr_end_date = datetime.strptime(
-                    curr_end_date_text, '%d %m %Y')
-                elem_id = driver.find_element_by_xpath(
-                    '//div[@id="value" and @class="style-scope yta-hovercard"]')
-                views_curr = elem_id.text.replace(" ", "")
-                time.sleep(1)
-
-                #  заполняем значения
-                if (day == curr_end_date.date()):
-                    print(day, ' ',  views_curr)
-                    num_filled_cells += 1
-                    row_num = num_filled_cells + 3
-                    worksheet.update_cell(row_num, 1, str(date_curr)[:10])
-                    worksheet.update_cell(row_num, column_num, views_curr)
+                #  try по причине некорректной ссылки 7 ноября
+                try: 
+                    elem_id = driver.find_element_by_xpath(
+                        '//div[@id="title" and @class="style-scope yta-hovercard"]')
                     time.sleep(1)
+                    #  забираем дату в формате по примеру "Пн, 10 мая 2021 г."
+                    # print(elem_id.text)
+                    #  преобразуем в нужный вид
+                    curr_end_date_text = int_value_from_ru_month(
+                        elem_id.text[4:][:-3])
+                    curr_end_date = datetime.strptime(
+                        curr_end_date_text, '%d %m %Y')
+                    elem_id = driver.find_element_by_xpath(
+                        '//div[@id="value" and @class="style-scope yta-hovercard"]')
+                    views_curr = elem_id.text.replace(" ", "")
+                    time.sleep(1)
+
+                    #  заполняем значения
+                    if (day == curr_end_date.date()):
+                        print(day, ' ',  views_curr)
+                        num_filled_cells += 1
+                        row_num = num_filled_cells + 3
+                        worksheet.update_cell(row_num, 1, str(date_curr)[:10])
+                        worksheet.update_cell(row_num, column_num, views_curr)
+                        time.sleep(1)
+                except Exception as ex:
+                    print(ex)
 
     driver.quit()
     print("Данные занесены")
